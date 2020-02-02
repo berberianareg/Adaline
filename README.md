@@ -1,4 +1,6 @@
 # Adaptive Linear Neuron - Adaline (1960)
+## Prerequisites
+* Python programming language
 ## Keywords
 * Artificial neural network
 * Supervised model
