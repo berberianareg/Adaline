@@ -14,6 +14,9 @@ Requirements
 import numpy as np  
 import random
 import matplotlib.pyplot as plt
+import os
+
+#%% figure parameters
 plt.rcParams['figure.figsize'] = (7,5)
 plt.rcParams['font.size']= 20
 plt.rcParams['lines.linewidth'] = 5
@@ -168,8 +171,21 @@ target_patterns = model.make_targets()
 weights, mseList = model.train_model(input_patterns, target_patterns)
 noise_levels, recall_performance = model.test_model(input_patterns, target_patterns, weights)
 
-#%% plot input and target patterns
+#%% plot figures
 
+cwd = os.getcwd()                                                               # get current working directory
+fileName = 'images'                                                             # specify filename
+
+# filepath and directory specifications
+if os.path.exists(os.path.join(cwd, fileName)) == False:                        # if path does not exist
+    os.makedirs(fileName)                                                       # create directory with specified filename
+    os.chdir(os.path.join(cwd, fileName))                                       # change cwd to the given path
+    cwd = os.getcwd()                                                           # get current working directory
+else:
+    os.chdir(os.path.join(cwd, fileName))                                       # change cwd to the given path
+    cwd = os.getcwd()                                                           # get current working directory
+
+# figure 1 - input and target patterns
 fig, ax = plt.subplots(nrows=2, ncols=3)
 ax[0,0].imshow(input_patterns[0].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
 ax[0,0].axis('off')
@@ -191,23 +207,22 @@ ax[1,1].set_title('Target patterns')
 ax[1,2].imshow([target_patterns[2]])
 ax[1,2].axis('off')
 fig.tight_layout()
+fig.savefig(os.path.join(os.getcwd(), 'figure_1'))
     
-#%% plot mean squared error
-
+# figure 2 - training phase
 fig, ax = plt.subplots()
 plt.plot(mseList, color='k')    
 plt.xlabel('Epoch')
 plt.ylabel('Mean squared error')
 plt.title('Training')
 plt.tight_layout()
-plt.show()
+fig.savefig(os.path.join(os.getcwd(), 'figure_2'))
 
-#%% plot recall performance
-
+# figure 3 - recall performance
 fig, ax = plt.subplots()
 plt.plot(noise_levels, recall_performance, color='k')
 plt.xlabel('Noise level')
 plt.ylabel('Recall performance (%)')    
 plt.title('Recall')
 plt.tight_layout()
-plt.show()
+fig.savefig(os.path.join(os.getcwd(), 'figure_3'))
