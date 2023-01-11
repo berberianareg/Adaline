@@ -33,7 +33,7 @@
  - Supervised model
  - Single-layer feedforward architecture
  - Binary input and target patterns
- - Stochastic gradient descent 
+ - Gradient descent 
  - Activation function
  - Mean squared error
  - Learning rate
