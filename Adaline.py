@@ -1,141 +1,213 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-@author: Berberian
+"""Adaptive linear neuron (Adaline) model for supervised machine learning.
+
+Notes
+-----
+    This script is version v0. It provides the base for all subsequent
+    iterations of the project.
+
+Requirements
+------------
+    See "requirements.txt"
 """
 
+#%% import libraries and modules
 import numpy as np  
-import random as rand
+import random
 import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (7,5)
+plt.rcParams['font.size']= 20
+plt.rcParams['lines.linewidth'] = 5
 
-#%% unit step function ========================================================
-
-def stepfunction(act):
-    threshold = 0.5                                                             # activation threshold for stepfunction
-    act[act >= threshold] = 1                                                   # if the activation is greater than or equal to the threshold, give 1 
-    act[act < threshold] = 0                                                    # if the activation is less than the threshold, give 0 
+#%%
+class Adaline:
+    """Adaline class."""
     
-    return act
-
-#%% learning function =========================================================
-
-def learning(inputPattern, targetPattern, alpha, minLearnError):
-    [nbProto, dim] = np.shape(inputPattern)                                     # find the number of prototypes and their corresponding dimension
-    mseList = []                                                                # creation of empty list for storing mean squared errors
-    seList = np.ones(nbProto)                                                   # place holder array for squared errors
-    w = np.zeros([nbProto, dim])                                                # initialization of weights
-    iteration = 0                                                               # initialization of iteration
-    
-    while np.mean(seList) > minLearnError:                                          
-        samples = rand.sample(range(nbProto), nbProto)                          # generation of a list of random samples
-        isample = 0                                                             # initialization of sample index
+    def __init__(self,
+                 num_prototypes=3, input_size=9, activation_threshold=0.5,
+                 learning_rate=0.01, min_training_error=0.001,
+                 num_repetitions=1000,
+                 min_noise_level=0, max_noise_level=5, noise_level_increment=0.1):
+        self.num_prototypes = num_prototypes
+        self.input_size = input_size
+        self.activation_threshold = activation_threshold
+        self.learning_rate = learning_rate
+        self.min_training_error = min_training_error
+        self.num_repetitions = num_repetitions
+        self.min_noise_level = min_noise_level
+        self.max_noise_level = max_noise_level
+        self.noise_level_increment = noise_level_increment
         
-        while isample < len(samples):                                               
-            inp = np.transpose([inputPattern[samples[isample]]])                # random selection of the input pattern
-            target = np.transpose([targetPattern[samples[isample]]])            # random selection of the corresponding target pattern
-            obtained = np.dot(w, inp)                                           # computation of the activation
-            error = target - obtained                                           # computation of the error
-            seList[isample] = np.dot(np.transpose(error),(error))               # computation of the squared error
-            w += alpha * error * np.transpose(inp)                              # update of the weights
-            isample += 1                                                        # isample increment
+    def make_inputs(self):
+        """Create input patterns."""
+        input_patterns = np.zeros([self.num_prototypes, self.input_size])
+        for prototype_index in range(self.num_prototypes):
+            input_patterns[prototype_index,::prototype_index+self.num_prototypes-1] = 1
         
-        mseList.append(np.mean(seList))                                         # computation of the mean of squared error 
-        iteration +=1                                                           # iteration increment
+        return input_patterns
     
-    return [w, mseList]
-
-#%% recall function ===========================================================
-
-def recall(inputPattern, targetPattern, noise, nbReps, w):
-    [nbProto, dim] = np.shape(inputPattern)                                     # find the number of prototypes and their corresponding dimension
-    sePerformance = np.zeros(nbProto)                                           # preallocate squared error of performance
-    recallPerformance = []                                                      # creation of an empty list for storing recall performance
-    
-    for inoise in range(len(noise)):
-        msePerformance = []                                                     # creation of an empty list for storing the mean squared error
+    def make_targets(self):
+        """Create target patterns."""
+        target_patterns = np.eye(self.num_prototypes)
         
-        for irep in range(nbReps):
-            noiseVect = np.transpose([np.random.uniform(0, noise[inoise],dim)]) # specification of uniform noise level
-            samples = rand.sample(range(nbProto), nbProto)                      # generation of a list of random samples
-            isample = 0                                                         # initialization of sample index
+        return target_patterns
+    
+    def step_function(self, activation):
+        """Apply step function as activation function."""
+        activation[activation >= self.activation_threshold] = 1 # if activation >= threshold, give 1
+        activation[activation < self.activation_threshold] = 0 # if activation < threshold, give 0
+        
+        return activation
+    
+    def initialize_connection_weights(self):
+        """Initialize connection weights."""
+        weights = np.zeros([self.num_prototypes, self.input_size])
+        
+        return weights
+    
+    def train_model(self, input_patterns, target_patterns):
+        """Train the model to learn associations between input patterns
+           and corresponding target patterns."""
+        # create empty list for storing mean squared errors
+        mean_squared_error_list = []                                                
+        # set place holder array for squared error computation
+        squared_error_list = np.ones(self.num_prototypes)                                
+        # initialize connection weights
+        weights = Adaline(self.num_prototypes, self.input_size).initialize_connection_weights()
+        # initialize iteration index
+        iteration_index = 0
+        
+        while np.mean(squared_error_list) > self.min_training_error:
+            # generation list of random samples                                        
+            random_sample = random.sample(range(self.num_prototypes), self.num_prototypes)      
+            # initialize sample index
+            sample_index = 0                                                        
             
-            while isample < len(samples):                                           
-                xt = np.transpose([inputPattern[samples[isample]]]) + noiseVect # addition of noise to randomly selected input pattern
-                xt = xt/max(xt)                                                 # rescaling of noisy input between 0 and 1
-                ot = np.dot(w, xt)                                              # computation of the activation
-                ot = stepfunction(ot)                                           # application of the step function
-                t = np.transpose([targetPattern[samples[isample]]])             # random selection of the corresponding target pattern
-                error = t - ot                                                  # computation of the error
-                sePerformance[isample] = np.dot(np.transpose(error), (error))   # computation of the squared error 
-                isample += 1                                                    # isample increment
+            while sample_index < len(random_sample):      
+                # random selection of input pattern                                         
+                input_vector = input_patterns[random_sample[sample_index]]
+                # random selection of corresponding target pattern
+                actual_target = target_patterns[random_sample[sample_index]]
+                # compute activation
+                obtained_target = np.dot(weights, input_vector)
+                # compute error
+                error = actual_target - obtained_target
+                # compute squared error
+                squared_error_list[sample_index] = np.dot(error, error)
+                # update connection weights
+                weights += self.learning_rate * np.transpose([error]) * input_vector
+                # increment sample index
+                sample_index += 1
             
-            sePerformance = np.double(sePerformance < 1)                        # specification of squared errors less than 1
-            msePerformance.append(np.mean(sePerformance))                       # computation of the mean squared error 
+            # compute mean squared error
+            mean_squared_error_list.append(np.mean(squared_error_list))
+            # increment iteration index
+            iteration_index +=1
         
-        recallPerformance.append(np.mean(msePerformance) * 100)                 # computation of recall performance in percentage
+        return weights, mean_squared_error_list
+
+    def test_model(self, input_patterns, target_patterns, weights):
+        """Test model performance over input patterns with added noise."""
+        # specify noise levels
+        noise_levels = np.arange(self.min_noise_level, self.max_noise_level, self.noise_level_increment)                     
+        # preallocate squared error performance
+        squared_error_performance = np.zeros(self.num_prototypes)
+        # create empty list for storing recall performance
+        recall_performance = []
+        
+        for noise_index in range(len(noise_levels)):
+            # create empty list for storing mean squared error
+            mean_squared_error_performance = []
+             
+            for repetition_count in range(self.num_repetitions):
+                # specify uniform noise level
+                noise_vector = np.random.uniform(0, noise_levels[noise_index], self.input_size)
+                # generate list of random samples
+                random_sample = random.sample(range(self.num_prototypes), self.num_prototypes)
+                # initialize sample index
+                sample_index = 0
+                
+                while sample_index < len(random_sample): 
+                    # random selection of noisy input pattern                                    
+                    input_vector = input_patterns[random_sample[sample_index]] + noise_vector
+                    # rescale noisy input between 0 and 1
+                    input_vector = input_vector/max(input_vector)
+                    # compute activation
+                    activation = np.dot(weights, input_vector)
+                    # apply step function
+                    obtained_target = Adaline(self.activation_threshold).step_function(activation)
+                    # random selection of corresponding target pattern
+                    actual_target = target_patterns[random_sample[sample_index]]
+                    # compute error
+                    error = actual_target - obtained_target
+                    # compute squared error 
+                    squared_error_performance[sample_index] = np.dot(error, error)
+                    # increment sample index
+                    sample_index += 1
+                
+                # specify squared errors less than 1
+                squared_error_performance = np.double(squared_error_performance < 1)
+                # compute mean squared error 
+                mean_squared_error_performance.append(np.mean(squared_error_performance))
+            
+            # compute recall performance in percentage
+            recall_performance.append(np.mean(mean_squared_error_performance) * 100)
+        
+        return noise_levels, recall_performance
+
+#%% instantiate Adaline class
+
+model = Adaline()
+
+#%% create input and target patterns
+
+input_patterns = model.make_inputs()
+target_patterns = model.make_targets()
+
+#%% train and test Adaline model
+
+weights, mseList = model.train_model(input_patterns, target_patterns)
+noise_levels, recall_performance = model.test_model(input_patterns, target_patterns, weights)
+
+#%% plot input and target patterns
+
+fig, ax = plt.subplots(nrows=2, ncols=3)
+ax[0,0].imshow(input_patterns[0].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
+ax[0,0].axis('off')
+
+ax[0,1].imshow(input_patterns[1].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
+ax[0,1].axis('off')
+ax[0,1].set_title('Input patterns')
+
+ax[0,2].imshow(input_patterns[2].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
+ax[0,2].axis('off')
+
+ax[1,0].imshow([target_patterns[0]])
+ax[1,0].axis('off')
+
+ax[1,1].imshow([target_patterns[1]])
+ax[1,1].axis('off')
+ax[1,1].set_title('Target patterns')
+
+ax[1,2].imshow([target_patterns[2]])
+ax[1,2].axis('off')
+fig.tight_layout()
     
-    return recallPerformance
+#%% plot mean squared error
 
-#%% generation of input and target patterns ===================================
+fig, ax = plt.subplots()
+plt.plot(mseList, color='k')    
+plt.xlabel('Epoch')
+plt.ylabel('Mean squared error')
+plt.title('Training')
+plt.tight_layout()
+plt.show()
 
-inputPattern = np.array([[1,0,0,1,0,0,1,0,0],[1,1,1,0,0,0,0,0,0],
-                         [1,0,0,0,1,0,0,0,1]])                                  # input patterns
-targetPattern = np.array([[1,0,0],[0,1,0],[0,0,1]])                             # target patterns
+#%% plot recall performance
 
-#%% learning phase ============================================================
-
-alpha = 0.01                                                                    # learning rate
-minLearnError = 0.001                                                           # minimum learning error (tolerance)
-
-[w, mseList] = learning(inputPattern, targetPattern, alpha, minLearnError)      # call learning function
-
-#%% recall phase ==============================================================
-
-noise = np.arange(0, 5, 0.1)                                                    # specification of the range of noise level
-nbReps = 1000                                                                   # nb of repetitions
-
-recallPerformance = recall(inputPattern, targetPattern, noise, nbReps, w)       # call recall function
-
-#%% plotting input and target patterns ========================================
-
-nbProto = np.size(inputPattern, 0)                                              # finding the number of prototypes
-fig, ax = plt.subplots(figsize=(8,6))                                           # generate a figure
-for isample in range(nbProto):
-    plt.subplot(2, nbProto, isample + 1)                                        # introduce a subplot
-    inp = np.reshape(-inputPattern[isample,:],(nbProto, nbProto))               # select the input pattern
-    plt.imshow(inp, cmap = 'gray')                                              # plot 
-    plt.tick_params(axis='both', which='both', 
-                    bottom=False, top=False, labelbottom=False, right=False, 
-                    left=False, labelleft=False)                                # specify tick parameters
-    if isample == 1:
-        plt.title('Inputs',fontsize=15)                                         # specify title
-    plt.subplot(2, nbProto, isample + nbProto + 1)                              # introduce subplot
-    tar = np.transpose([-targetPattern[isample,:]])                             # select the target pattern
-    plt.imshow(tar, cmap = 'gray')                                              # plot
-    plt.tick_params(axis='both', which='both', 
-                    bottom=False, top=False, labelbottom=False, right=False, 
-                    left=False, labelleft=False)                                # specify tick parameters 
-    if isample == 1:
-        plt.title('Targets',fontsize=15)                                        # specify title
-        
-#%% plotting mse during learning ==============================================
-
-fig, ax = plt.subplots(figsize=(8,5))                                           # generate a figure
-plt.plot(mseList, 'k', linewidth = 4)                                           # plot
-plt.xlabel("Learning iteration", fontsize=15)                                   # specify xlabel
-plt.ylabel("Mean Squared Error",fontsize=15)                                    # specify ylabel
-plt.title('Learning',fontsize=15)                                               # specify title
-plt.xticks(fontsize = 15)                                                       # specify xticks
-plt.yticks(fontsize = 15)                                                       # specify yticks
-
-#%% plotting recall performance as a function of noise level ==================
-
-fig, ax = plt.subplots(figsize=(8,5))                                           # generate a figure
-plt.plot(noise, recallPerformance, 'k', linewidth=4)                            # plot
-plt.xlabel("Noise level", fontsize=15)                                          # specify xlabel
-plt.ylabel("Recall performance (%)",fontsize=15)                                # specify ylabel
-plt.title('Recall',fontsize=15)                                                 # specify title
-plt.xticks(fontsize = 15)                                                       # specify xticks 
-plt.yticks(fontsize = 15)                                                       # specify yticks 
-plt.ylim(0, 101)                                                                # specify ylim
- 
+fig, ax = plt.subplots()
+plt.plot(noise_levels, recall_performance, color='k')
+plt.xlabel('Noise level')
+plt.ylabel('Recall performance (%)')    
+plt.title('Recall')
+plt.tight_layout()
+plt.show()
