@@ -1,4 +1,4 @@
-# Adaptive Linear Neuron - Adaline (1960)
+# Adaptive Linear Neuron (1960)
 
 ## Adaline model for supervised machine learning
 
@@ -73,4 +73,4 @@ see requirements.txt
 - Twitter - [@berberianareg](https://twitter.com/BerberianNareg)
 - LinkedIn - [Nareg Berberian](https://www.linkedin.com/in/nareg-berberian-phd-ab6759b9/)
 
-[Back to the Top](#project-title)
+[Back to the Top](#adaptive-linear-neuron-1960)

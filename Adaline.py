@@ -68,8 +68,7 @@ class Adaline:
         return weights
     
     def train_model(self, input_patterns, target_patterns):
-        """Train the model to learn associations between input patterns
-           and corresponding target patterns."""
+        """Train the model to learn associations between input patterns and corresponding target patterns."""
         # create empty list for storing mean squared errors
         mean_squared_error_list = []                                                
         # set place holder array for squared error computation
@@ -156,6 +155,51 @@ class Adaline:
             recall_performance.append(np.mean(mean_squared_error_performance) * 100)
         
         return noise_levels, recall_performance
+    
+    def plot_inputs_and_targets(self):
+        """Plot input and target patterns."""
+        fig, ax = plt.subplots(nrows=2, ncols=3)
+        ax[0,0].imshow(input_patterns[0].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
+        ax[0,0].axis('off')
+
+        ax[0,1].imshow(input_patterns[1].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
+        ax[0,1].axis('off')
+        ax[0,1].set_title('Input patterns')
+
+        ax[0,2].imshow(input_patterns[2].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
+        ax[0,2].axis('off')
+
+        ax[1,0].imshow([target_patterns[0]])
+        ax[1,0].axis('off')
+
+        ax[1,1].imshow([target_patterns[1]])
+        ax[1,1].axis('off')
+        ax[1,1].set_title('Target patterns')
+
+        ax[1,2].imshow([target_patterns[2]])
+        ax[1,2].axis('off')
+        fig.tight_layout()
+        fig.savefig(os.path.join(os.getcwd(), 'figure_1'))
+        
+    def plot_training_phase(self):
+        """Plot training phase."""
+        fig, ax = plt.subplots()
+        plt.plot(mseList, color='k')    
+        plt.xlabel('Epoch')
+        plt.ylabel('Mean squared error')
+        plt.title('Training')
+        plt.tight_layout()
+        fig.savefig(os.path.join(os.getcwd(), 'figure_2'))
+        
+    def plot_recall_performance(self):
+        """Plot recall performance."""
+        fig, ax = plt.subplots()
+        plt.plot(noise_levels, recall_performance, color='k')
+        plt.xlabel('Noise level')
+        plt.ylabel('Recall performance (%)')    
+        plt.title('Recall')
+        plt.tight_layout()
+        fig.savefig(os.path.join(os.getcwd(), 'figure_3'))
 
 #%% instantiate Adaline class
 
@@ -185,44 +229,7 @@ else:
     os.chdir(os.path.join(cwd, fileName))                                       # change cwd to the given path
     cwd = os.getcwd()                                                           # get current working directory
 
-# figure 1 - input and target patterns
-fig, ax = plt.subplots(nrows=2, ncols=3)
-ax[0,0].imshow(input_patterns[0].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
-ax[0,0].axis('off')
+model.plot_inputs_and_targets()
+model.plot_training_phase()
+model.plot_recall_performance()
 
-ax[0,1].imshow(input_patterns[1].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
-ax[0,1].axis('off')
-ax[0,1].set_title('Input patterns')
-
-ax[0,2].imshow(input_patterns[2].reshape(int(np.sqrt(model.input_size)), int(np.sqrt(model.input_size))))
-ax[0,2].axis('off')
-
-ax[1,0].imshow([target_patterns[0]])
-ax[1,0].axis('off')
-
-ax[1,1].imshow([target_patterns[1]])
-ax[1,1].axis('off')
-ax[1,1].set_title('Target patterns')
-
-ax[1,2].imshow([target_patterns[2]])
-ax[1,2].axis('off')
-fig.tight_layout()
-fig.savefig(os.path.join(os.getcwd(), 'figure_1'))
-    
-# figure 2 - training phase
-fig, ax = plt.subplots()
-plt.plot(mseList, color='k')    
-plt.xlabel('Epoch')
-plt.ylabel('Mean squared error')
-plt.title('Training')
-plt.tight_layout()
-fig.savefig(os.path.join(os.getcwd(), 'figure_2'))
-
-# figure 3 - recall performance
-fig, ax = plt.subplots()
-plt.plot(noise_levels, recall_performance, color='k')
-plt.xlabel('Noise level')
-plt.ylabel('Recall performance (%)')    
-plt.title('Recall')
-plt.tight_layout()
-fig.savefig(os.path.join(os.getcwd(), 'figure_3'))
